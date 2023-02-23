@@ -25,33 +25,31 @@ def insert_data(conn, cursor, full_name, date_of_birth, gender):
 
 
 def select_data(conn, cursor):
-    cursor.execute('''SELECT full_name, date_of_birth, gender,
+    cursor.execute('''SELECT DISTINCT(full_name), date_of_birth, gender,
                       strftime('%Y', 'now') - strftime('%Y', date_of_birth) - (strftime('%m-%d', 'now') < strftime('%m-%d', date_of_birth)) AS age
                       FROM people
-                      GROUP BY full_name || date_of_birth
                       ORDER BY full_name;''')
     return cursor.fetchall()
 
 
-def fill_data(conn, cursor, num_records):
-    names_m = [{'name': line.rstrip(), 'gender': 'M'} for line in open(NAME_MAN)]
-    names_w = [{'name': line.rstrip(), 'gender': 'F'} for line in open(NAME_WOMAN)]
+def fill_name_data(conn, cursor, num_records=100):
+    count = 0
+
+    with open(NAME_MAN) as file_m:
+        names_m = [{'name': line.rstrip(), 'gender': 'M'} for line in file_m]
+    with open(NAME_WOMAN) as file_w:
+        names_w = [{'name': line.rstrip(), 'gender': 'F'} for line in file_w]
     choice_list = [names_m, names_w]
 
-    for i in range(num_records):
+    while count < num_records:
         random_names = random.choice(choice_list)
-        name = ''
-        gender = ''
-        for y in random_names:
-
-
-            name = y['name']
-            gender = y['gender']
-
-
+        name = random.choice(random_names)['name']
+        gender = random_names[0]['gender']
         date_of_birth = datetime.now() - timedelta(days=random.randint(0, 365 * 60))
         insert_data(conn, cursor, name, date_of_birth, gender)
-
+        count += 1
+        if count >= num_records:
+            break
 
 
 def optimize(conn, cursor):
@@ -77,11 +75,12 @@ def main():
                 for row in rows:
                     print(f'{row[0]} {row[1]} {row[2]} {row[3]}')
             elif command == '4':
-                fill_data(conn, cursor, 1000000)
+                fill_name_data(conn, cursor, 100)
             elif command == '5':
                 start_time = time.time()
                 optimize(conn, cursor)
                 rows = cursor.execute("SELECT * FROM people WHERE gender = 'M' AND full_name LIKE 'F%'").fetchall()
+                print(rows)
                 end_time = time.time()
                 for row in rows:
                     print(row)
