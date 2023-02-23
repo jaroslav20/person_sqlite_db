@@ -82,8 +82,6 @@ def main():
                 rows = cursor.execute("SELECT * FROM people WHERE gender = 'M' AND full_name LIKE 'F%'").fetchall()
                 print(rows)
                 end_time = time.time()
-                for row in rows:
-                    print(row)
                 print(f'Time taken: {end_time - start_time} seconds')
 
         conn.commit()
